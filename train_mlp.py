@@ -1,11 +1,10 @@
 import pandas as pd
 import ast
-import torch
 from Model.data_process import BERTDataset_For_League
 from torch.utils.data import DataLoader
 from Model.BERT import BERT,BERTLM, BERTTrainer
-
-
+from Model.WinnerPredictModel import Winner_Predictor, Winner_Predictor_Trainer
+import torch
 
 if __name__ == '__main__':
     df = pd.read_csv("Data/match_data_2.csv")
@@ -41,23 +40,24 @@ if __name__ == '__main__':
 
     bert_model = BERT(
     vocab_size=vocab_size,
-    d_model= 16,
-    n_layers=8,
+    d_model= 64,
+    n_layers=2,
     heads=8,
     dropout=0.1
     )
 
-    model = BERTLM(bert_model, vocab_size)
-    model.load_state_dict(torch.load("bert_model_2"))
+    bert_ = BERTLM(bert_model, vocab_size)
+    bert_.load_state_dict(torch.load("bert_model"))
 
-    bert_trainer = BERTTrainer(model, train_loader, device='cpu')
+
+    wpm = Winner_Predictor(bert_)
+    wpm_trainer = Winner_Predictor_Trainer(wpm, train_loader, lr= 0.001, device='cpu')
+
 
     prev_epochs = 0
-    epochs = 20
-
-
+    epochs = 100
     for epoch in range(prev_epochs, epochs):
-        bert_trainer.train(epoch)
+        wpm_trainer.train(epoch)
 
-    torch.save(model.state_dict(), "bert_model_2")
-
+    torch.save(wpm.state_dict(), "mlp_model")
+    

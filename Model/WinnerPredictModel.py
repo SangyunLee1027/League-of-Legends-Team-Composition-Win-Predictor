@@ -6,9 +6,9 @@ class Winner_Predictor(nn.Module):
     def __init__(self, bert):
         super(Winner_Predictor, self).__init__()
         self.bert = bert
-        self.linear1 = nn.Linear(64 * 10, 128)
-        self.linear2 = nn.Linear(128, 10)
-        self.linear3 = nn.Linear(10, 1)
+        self.linear1 = nn.Linear(64 * 10, 640)
+        self.linear2 = nn.Linear(640, 128)
+        self.linear3 = nn.Linear(128, 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
@@ -80,7 +80,7 @@ class Winner_Predictor_Trainer:
             data = {key: value.to(self.device) for key, value in data.items()}
 
             # 1. forward the input data to get output
-            winner_output = torch.flatten(self.model.forward(data["bert_input"], data["segment_label"]))
+            winner_output = torch.round(torch.flatten(self.model.forward(data["bert_input"], data["segment_label"])))
             
             # 2-1. Crossentroyp loss of winner classification result
             loss = self.criterion(winner_output, (data["winner_label"]).float())
