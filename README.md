@@ -4,5 +4,5 @@ Predict the win possibilities of the team in League of Legends based on their te
 
 Tested several model for classification:
 
-    MLP: 57%
-    CNN:
+    MLP: 56%
+    CNN: 62%
