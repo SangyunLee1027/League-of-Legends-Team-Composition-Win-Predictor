@@ -1,8 +1,8 @@
 import pandas as pd
 import ast
-from Model.data_process import BERTDataset_For_League
+from Model.data_process import MLPDataset_For_League
 from torch.utils.data import DataLoader
-from Model.BERT import BERT,BERTLM, BERTTrainer
+from Model.BERT import BERT,BERTLM
 from Model.WinnerPredictModel import Winner_Predictor, Winner_Predictor_Trainer
 import torch
 
@@ -30,28 +30,29 @@ if __name__ == '__main__':
     MAX_LEN = 13
     vocab_size = 171
 
-    train_data = BERTDataset_For_League(
+    train_data = MLPDataset_For_League(
     train_datas, seq_len=MAX_LEN)
 
-    # print(train_data.)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     train_loader = DataLoader(
     train_data, batch_size=16, shuffle=True, pin_memory=True)
 
     bert_model = BERT(
     vocab_size=vocab_size,
-    d_model= 64,
-    n_layers=2,
+    d_model= 32,
+    n_layers=8,
     heads=8,
-    dropout=0.1
+    dropout=0.1,
+    device = device
     )
 
     bert_ = BERTLM(bert_model, vocab_size)
-    bert_.load_state_dict(torch.load("bert_model"))
+    bert_.load_state_dict(torch.load("Trained_Model/bert_model_final"))
 
 
-    wpm = Winner_Predictor(bert_)
-    wpm_trainer = Winner_Predictor_Trainer(wpm, train_loader, lr= 0.001, device='cpu')
+    wpm = Winner_Predictor(bert_).to(device)
+    wpm_trainer = Winner_Predictor_Trainer(wpm, train_loader, lr= 0.001, device='cuda')
 
 
     prev_epochs = 0
@@ -59,5 +60,5 @@ if __name__ == '__main__':
     for epoch in range(prev_epochs, epochs):
         wpm_trainer.train(epoch)
 
-    torch.save(wpm.state_dict(), "mlp_model")
+    torch.save(wpm.state_dict(), "Trained_Model/mlp_model")
     

@@ -37,27 +37,30 @@ if __name__ == '__main__':
     # print(train_data.)
 
     train_loader = DataLoader(
-    train_data, batch_size=16, shuffle=True, pin_memory=True)
+    train_data, batch_size=32, shuffle=True, pin_memory=True)
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     bert_model = BERT(
     vocab_size=vocab_size,
-    d_model= 16,
+    d_model= 32,
     n_layers=8,
     heads=8,
-    dropout=0.1
+    dropout=0.1,
+    device = device
     )
 
-    model = BERTLM(bert_model, vocab_size)
-    model.load_state_dict(torch.load("bert_model_2"))
+    model = BERTLM(bert_model, vocab_size).to(device)
+    # model.load_state_dict(torch.load("bert_model_final"))
 
-    bert_trainer = BERTTrainer(model, train_loader, device='cpu')
+    bert_trainer = BERTTrainer(model, train_loader, device=device)
 
     prev_epochs = 0
-    epochs = 20
+    epochs = 937
 
 
     for epoch in range(prev_epochs, epochs):
         bert_trainer.train(epoch)
-
-    torch.save(model.state_dict(), "bert_model_2")
+        torch.save(model.state_dict(), "Trained_Model/bert_model_final")
+    
 

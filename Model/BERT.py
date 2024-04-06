@@ -39,7 +39,7 @@ class BERTEmbedding(torch.nn.Module):
         sum of all these features are output of BERTEmbedding
     """
 
-    def __init__(self, vocab_size, embed_size, seq_len=13, dropout=0.1):
+    def __init__(self, vocab_size, embed_size, seq_len=13, dropout=0.1, device = "cuda"):
         """
         :param vocab_size: total vocab size
         :param embed_size: embedding size of token embedding
@@ -52,11 +52,12 @@ class BERTEmbedding(torch.nn.Module):
         # padding_idx is not updated during training, remains as fixed pad (0)
         self.token = torch.nn.Embedding(vocab_size, embed_size, padding_idx=0)
         self.segment = torch.nn.Embedding(3, embed_size, padding_idx=0)
-        self.position = PositionalEmbedding(d_model=embed_size, max_len=seq_len)
+        self.position = PositionalEmbedding(d_model=embed_size, max_len=seq_len).to(device)
         self.dropout = torch.nn.Dropout(p=dropout)
+        self.device = device
        
     def forward(self, sequence, segment_label):
-        x = self.token(sequence) + self.position(sequence) + self.segment(segment_label)
+        x = self.token(sequence) + self.position(sequence).to(self.device) + self.segment(segment_label)
         return self.dropout(x)
     
 
@@ -110,7 +111,7 @@ class EncoderLayer(torch.nn.Module):
 
 
 class BERT(torch.nn.Module):
-    def __init__(self, vocab_size, d_model = 768, n_layers = 12, heads = 12, dropout = 0.1):
+    def __init__(self, vocab_size, d_model = 768, n_layers = 12, heads = 12, dropout = 0.1, device = "cuda"):
         """
         :param vocab_size: vocab_size of total words
         :param hidden: BERT model hidden size (d_model * n)
@@ -126,7 +127,7 @@ class BERT(torch.nn.Module):
         
         self.feed_forward_hidden = d_model * 4
 
-        self.embedding = BERTEmbedding(vocab_size = vocab_size, embed_size = d_model, seq_len = 13)
+        self.embedding = BERTEmbedding(vocab_size = vocab_size, embed_size = d_model, seq_len = 13, device = device)
 
         self.encoder_blocks = torch.nn.ModuleList([
             EncoderLayer(d_model, heads, d_model * 4, dropout) for _ in range(n_layers)

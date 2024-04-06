@@ -54,11 +54,15 @@ class BERTDataset_For_League(Dataset):
                 prob /= 0.15
 
                 # 80% chance change token to mask(3) token
-                if prob < 0.8:
+                if prob < 0.9:
                     for i in range(len(token_id)):
                         output.append(3)
 
-                # 20% chance change token to current token
+                # 10% chance change token to original one
+                # elif prob < 0.9:
+                #     for i in range(len(token_id)):
+                #         output.append(random.randrange(167)+4)
+
                 else:
                     output.append(token_id)
 
@@ -84,7 +88,44 @@ class BERTDataset_For_League(Dataset):
         '''return sentence pair'''
         return self.lines[item][0], self.lines[item][1], self.lines[item][2]
 
+class MLPDataset_For_League(Dataset):
+    def __init__(self, data_pair, seq_len=13):
+        
+        self.seq_len = seq_len
+        self.corpus_lines = len(data_pair)
+        self.lines = data_pair
 
+    def __len__(self):
+        return self.corpus_lines
+
+    def __getitem__(self, item):
+
+        # Step 1: get random sentence pair, either negative or positive (saved as is_next_label)
+        t1, t2, winner_label = self.get_sent(item)
+
+        # Step 3: Adding CLS(1) and SEP(2) tokens to the start and end of sentences (Don't need padding since all input have the same size)
+        t1 = [1] + t1 + [2]
+        t2 = t2 + [2]
+        
+        # Step 4: combine sentence 1 and 2 as one input
+        segment_label = ([1 for _ in range(len(t1))] + [2 for _ in range(len(t2))])[:self.seq_len]
+        bert_input = (t1 + t2)[:self.seq_len]
+        
+        output = {"bert_input": bert_input,
+                  "segment_label": segment_label,
+                  "winner_label": winner_label}
+
+        return {key: torch.tensor(value) for key, value in output.items()}
+
+
+    def get_sent(self, index):
+        '''return random sentence pair'''
+        t1, t2, label = self.get_corpus_line(index)
+        return t1, t2, label
+
+    def get_corpus_line(self, item):
+        '''return sentence pair'''
+        return self.lines[item][0], self.lines[item][1], self.lines[item][2]
 
 
 def make_champ_idx(file_path, start_idx = 4):

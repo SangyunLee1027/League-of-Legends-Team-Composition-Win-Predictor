@@ -6,11 +6,12 @@ class Winner_Predictor(nn.Module):
     def __init__(self, bert):
         super(Winner_Predictor, self).__init__()
         self.bert = bert
-        self.linear1 = nn.Linear(64 * 10, 640)
-        self.linear2 = nn.Linear(640, 128)
-        self.linear3 = nn.Linear(128, 1)
+        self.linear1 = nn.Linear(32 * 11, 171)
+        # self.linear2 = nn.Linear(161, 65)
+        self.linear3 = nn.Linear(171, 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
+        self.dropout = nn.Dropout()
 
         self.bert.eval()
         for param in self.bert.parameters():
@@ -20,13 +21,13 @@ class Winner_Predictor(nn.Module):
         # get word embedding based on the champ Id
         embedded_x = self.bert.embedding(x, segment_label)
         
-        # delete [CLS] and [SEP] tokens from input
-        embedded_x = torch.cat((embedded_x[:, 1:6], embedded_x[:, 7:-1]), dim = 1)
+        # delete [SEP] tokens from input
+        embedded_x = torch.cat((embedded_x[:, :6], embedded_x[:, 7:-1]), dim = 1)
         # flatten the input
         input_ = torch.flatten(embedded_x, start_dim=1)
 
-        output = self.relu(self.linear1(input_))
-        output = self.relu(self.linear2(output))
+        output = self.dropout(self.relu(self.linear1(input_)))
+        # output = self.relu(self.dropout(self.linear2(output)))
         output = self.sigmoid(self.linear3(output))
         return output
     
@@ -50,7 +51,7 @@ class Winner_Predictor_Trainer:
         self.device = device
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr = lr, betas = betas, weight_decay=weight_decay)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.BCELoss()
 
     def train(self, epoch):
         self.iteration(epoch, self.train_data)
@@ -80,7 +81,7 @@ class Winner_Predictor_Trainer:
             data = {key: value.to(self.device) for key, value in data.items()}
 
             # 1. forward the input data to get output
-            winner_output = torch.round(torch.flatten(self.model.forward(data["bert_input"], data["segment_label"])))
+            winner_output = torch.flatten(self.model.forward(data["bert_input"], data["segment_label"]))
             
             # 2-1. Crossentroyp loss of winner classification result
             loss = self.criterion(winner_output, (data["winner_label"]).float())
@@ -92,7 +93,7 @@ class Winner_Predictor_Trainer:
                 self.optimizer.step()
 
             # next sentence prediction accuracy
-            correct = winner_output.argmax(dim=-1).eq(data["winner_label"]).sum().item()
+            correct = torch.round(winner_output).eq(data["winner_label"]).sum().item()
             avg_loss += loss.item()
             total_correct += correct
             total_element += data["winner_label"].nelement()
