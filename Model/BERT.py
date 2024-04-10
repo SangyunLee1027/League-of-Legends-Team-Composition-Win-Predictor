@@ -127,7 +127,7 @@ class BERT(torch.nn.Module):
         
         self.feed_forward_hidden = d_model * 4
 
-        self.embedding = BERTEmbedding(vocab_size = vocab_size, embed_size = d_model, seq_len = 13, device = device)
+        self.embedding = BERTEmbedding(vocab_size = vocab_size, embed_size = d_model, seq_len = 33, device = device)
 
         self.encoder_blocks = torch.nn.ModuleList([
             EncoderLayer(d_model, heads, d_model * 4, dropout) for _ in range(n_layers)

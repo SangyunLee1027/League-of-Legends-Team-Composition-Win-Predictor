@@ -8,7 +8,7 @@ from Model.BERT import BERT,BERTLM, BERTTrainer
 
 
 if __name__ == '__main__':
-    df = pd.read_csv("Data/match_data_2.csv")
+    df = pd.read_csv("Data/match_data_3.csv")
     df["teams"] = df["teams"].apply(lambda x : ast.literal_eval(x))
 
 
@@ -28,8 +28,8 @@ if __name__ == '__main__':
     train_datas = [[df["teams"][i][:5], df["teams"][i][5:], df["winner"][i]] for i in range(len(df))]
 
 
-    MAX_LEN = 13
-    vocab_size = 171
+    MAX_LEN = 33
+    vocab_size = 3000
 
     train_data = BERTDataset_For_League(
     train_datas, seq_len=MAX_LEN)
@@ -37,13 +37,13 @@ if __name__ == '__main__':
     # print(train_data.)
 
     train_loader = DataLoader(
-    train_data, batch_size=32, shuffle=True, pin_memory=True)
+    train_data, batch_size=16, shuffle=True, pin_memory=True)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     bert_model = BERT(
     vocab_size=vocab_size,
-    d_model= 32,
+    d_model= 64,
     n_layers=8,
     heads=8,
     dropout=0.1,
@@ -56,11 +56,11 @@ if __name__ == '__main__':
     bert_trainer = BERTTrainer(model, train_loader, device=device)
 
     prev_epochs = 0
-    epochs = 937
+    epochs = 20
 
 
     for epoch in range(prev_epochs, epochs):
         bert_trainer.train(epoch)
-        torch.save(model.state_dict(), "Trained_Model/bert_model_final")
+        torch.save(model.state_dict(), "Trained_Model/bert_model_5")
     
 

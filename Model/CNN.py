@@ -7,12 +7,13 @@ import tqdm
 class CNN(nn.Module):
     def __init__(self, bert):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels = 1, out_channels= 5, kernel_size = (2, 2), padding = 1)
+        self.conv1 = nn.Conv2d(in_channels = 1, out_channels= 5, kernel_size = (3, 2), padding = 1)
         self.pool1 = nn.MaxPool2d(kernel_size = (1, 2))
-        self.conv2 = nn.Conv2d(in_channels = 5, out_channels = 10, kernel_size = (5, 2), dilation = (2, 1))
-        # self.pool2 = nn.MaxPool2d(kernel_size = (2, 1))
+        self.conv2 = nn.Conv2d(in_channels = 5, out_channels = 20, kernel_size = (5, 2), dilation = (2, 1))
+        # self.pool2 = nn.MaxPool2d(kernel_size = (3, 1))
         self.relu = nn.ReLU()
-        self.linear = nn.Linear(10 * 3 * 15, 2)
+        self.linear = nn.Linear(20 * 3 * 15 + 64, 1)
+        self.sigmoid = nn.Sigmoid()
 
         self.bert = bert
 
@@ -26,14 +27,21 @@ class CNN(nn.Module):
         embedded_x = self.bert.embedding(x, segment_label)
         
         # delete [SEP] tokens from input
-        embedded_x = torch.cat((embedded_x[:, 1:6], embedded_x[:, 7:-1]), dim = 1)
-        embedded_x = embedded_x.unsqueeze(1)
+        x = (torch.cat((embedded_x[:, 1:6], embedded_x[:, 7:-1]), dim = 1)).unsqueeze(1)
 
-        # print()
-        x = self.pool1(self.relu(self.conv1(embedded_x)))
+        # do standard scalar
+        # dims = list(range(x.dim() - 1))
+        # mean = torch.mean(x, dim=dims)
+        # std = torch.std(x, dim=dims)
+
+        # epsilon = 1e-9
+        # x = (x - mean) / (std + epsilon)
+        
+        
+        x = self.pool1(self.relu(self.conv1(x)))
         x = self.relu(self.conv2(x))
-        x = x.view(x.size(0), -1)
-        output = self.linear(x)
+        x = torch.concat([embedded_x[:,0].view(embedded_x.size(0), -1), x.view(x.size(0), -1)], dim = 1)
+        output = self.sigmoid(self.linear(x))
         return output
     
 
@@ -54,7 +62,8 @@ class CNN_Trainer:
         self.test_data = test_dataloader
         self.device = device
 
-        self.criterion = nn.CrossEntropyLoss()
+        # self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.BCELoss()
         self.optimizer = optim.Adam(model.parameters(), lr = lr)
 
     def train(self, epoch):
@@ -89,7 +98,8 @@ class CNN_Trainer:
             
             # print(winner_output.shape)
             # 2-1. Crossentroyp loss of winner classification result
-            loss = self.criterion(winner_output, (data["winner_label"]))
+            # loss = self.criterion(winner_output, (data["winner_label"]))
+            loss = self.criterion(torch.flatten(winner_output), (data["winner_label"]).float())
 
             # 3. backward and optimization only in train
             if train:
@@ -98,7 +108,8 @@ class CNN_Trainer:
                 self.optimizer.step()
 
             # next sentence prediction accuracy
-            correct = winner_output.argmax(dim=-1).eq(data["winner_label"]).sum().item()
+            # correct = winner_output.argmax(dim=-1).eq(data["winner_label"]).sum().item()
+            correct = torch.round(torch.flatten(winner_output)).eq(data["winner_label"]).sum().item()
             avg_loss += loss.item()
             total_correct += correct
             total_element += data["winner_label"].nelement()

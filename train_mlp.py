@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
 
     MAX_LEN = 13
-    vocab_size = 171
+    vocab_size = 2000
 
     train_data = MLPDataset_For_League(
     train_datas, seq_len=MAX_LEN)
@@ -56,9 +56,9 @@ if __name__ == '__main__':
 
 
     prev_epochs = 0
-    epochs = 100
+    epochs = 20
     for epoch in range(prev_epochs, epochs):
         wpm_trainer.train(epoch)
 
-    torch.save(wpm.state_dict(), "Trained_Model/mlp_model")
+        torch.save(wpm.state_dict(), "Trained_Model/mlp_model")
     
