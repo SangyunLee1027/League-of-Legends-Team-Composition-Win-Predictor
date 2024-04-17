@@ -111,7 +111,7 @@ class EncoderLayer(torch.nn.Module):
 
 
 class BERT(torch.nn.Module):
-    def __init__(self, vocab_size, d_model = 768, n_layers = 12, heads = 12, dropout = 0.1, device = "cuda"):
+    def __init__(self, vocab_size, d_model = 768, n_layers = 12, heads = 12, dropout = 0.1, seq_len = 33, device = "cuda"):
         """
         :param vocab_size: vocab_size of total words
         :param hidden: BERT model hidden size (d_model * n)
@@ -127,7 +127,7 @@ class BERT(torch.nn.Module):
         
         self.feed_forward_hidden = d_model * 4
 
-        self.embedding = BERTEmbedding(vocab_size = vocab_size, embed_size = d_model, seq_len = 33, device = device)
+        self.embedding = BERTEmbedding(vocab_size = vocab_size, embed_size = d_model, seq_len = seq_len, device = device)
 
         self.encoder_blocks = torch.nn.ModuleList([
             EncoderLayer(d_model, heads, d_model * 4, dropout) for _ in range(n_layers)
@@ -281,7 +281,9 @@ class BERTTrainer:
             mask_loss = self.criterion(mask_lm_output.transpose(1, 2), data["bert_label"])
 
             # 2-3. Adding next_loss and mask_loss : 3.4 Pre-training Procedure
-            loss = next_loss + mask_loss
+            
+            loss = next_loss*3.16227766017*3 + mask_loss/3.16227766017 # normalize by sqrt(10) which is square root of the length of random variable
+
 
             # 3. backward and optimization only in train
             if train:
