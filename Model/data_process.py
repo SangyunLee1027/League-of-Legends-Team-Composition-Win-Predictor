@@ -6,11 +6,13 @@ import pandas as pd
 import ast
 
 class BERTDataset_For_League(Dataset):
-    def __init__(self, data_pair, seq_len=13):
+    def __init__(self, data_pair, seq_len=33):
         
         self.seq_len = seq_len
         self.corpus_lines = len(data_pair)
         self.lines = data_pair
+        # self.tokenization = tokenization # pandas dataframe
+        # self.checker = set(tokenization.index) # used for checking the word in tokenizer
 
     def __len__(self):
         return self.corpus_lines
@@ -23,6 +25,9 @@ class BERTDataset_For_League(Dataset):
         # Step 2: replace random words in sentence with mask / random words
         t1_masked, t1_mask_label = self.masking_word(t1)
         t2_masked, t2_mask_label = self.masking_word(t2)
+
+        
+
         t1_member_masked, t1_member_label = self.masking_word(t1_member)
         t2_member_masked, t2_member_label = self.masking_word(t2_member)
 
@@ -31,7 +36,7 @@ class BERTDataset_For_League(Dataset):
         t1_label = []
         t2_label = []
         for i in range(5):
-            t1_random = t1_random + [t1_masked[i], t1_member_masked[i], 3]
+            t1_random = t1_random + [t1_masked[i], t1_member_masked[i], 3] # 3 = [Player seperator]
             t1_label = t1_label + [t1_mask_label[i], t1_member_label[i], 3]
             t2_random = t2_random + [t2_masked[i], t2_member_masked[i], 3]
             t2_label = t2_label + [t2_mask_label[i], t2_member_label[i], 3]
