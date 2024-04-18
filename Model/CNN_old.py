@@ -12,7 +12,7 @@ class CNN(nn.Module):
         self.conv2 = nn.Conv2d(in_channels = 5, out_channels = 20, kernel_size = (5, 2), dilation = (2, 1))
         # self.pool2 = nn.MaxPool2d(kernel_size = (3, 1))
         self.relu = nn.ReLU()
-        self.linear = nn.Linear(20 * 3 * 15 + 64, 1)
+        self.linear = nn.Linear(20 * 93 + 64, 1)
         self.sigmoid = nn.Sigmoid()
 
         self.bert = bert

@@ -1,15 +1,15 @@
 import pandas as pd
 import ast
-from Model.data_process import MLPDataset_For_League
+from Model.data_process_old import MLPDataset_For_League
 from torch.utils.data import DataLoader
 from Model.BERT import BERT,BERTLM
-from Model.CNN import CNN, CNN_Trainer
+from Model.CNN_old import CNN, CNN_Trainer
 import torch
 
 if __name__ == '__main__':
 
 
-    df = pd.read_csv("Data/match_data_2.csv")
+    df = pd.read_csv("Data/match_data_3.csv")
     df["teams"] = df["teams"].apply(lambda x : ast.literal_eval(x))
 
 
@@ -60,21 +60,21 @@ if __name__ == '__main__':
         for idx, d in data.items():
             test_datas[idx].append(d)
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     test_datas = {key: torch.stack(value, dim = 0).to(device) for key, value in test_datas.items()}
 
 
     bert_model = BERT(
     vocab_size=vocab_size,
-    d_model= 32,
+    d_model= 64,
     n_layers=8,
     heads=8,
     dropout=0.1,
+    seq_len = 13,
     device = device
     )
 
     bert_ = BERTLM(bert_model, vocab_size)
-    bert_.load_state_dict(torch.load("Trained_Model/bert_model_final"))
+    bert_.load_state_dict(torch.load("Trained_Model/bert_model_10"))
 
 
     cn = CNN(bert_).to(device)

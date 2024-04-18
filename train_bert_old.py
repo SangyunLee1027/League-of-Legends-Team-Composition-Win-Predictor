@@ -62,4 +62,4 @@ if __name__ == '__main__':
 
     for epoch in range(prev_epochs, epochs):
         bert_trainer.train(epoch)
-        torch.save(model.state_dict(), "Trained_Model/bert_model_9")
+        torch.save(model.state_dict(), "Trained_Model/bert_model_10")
